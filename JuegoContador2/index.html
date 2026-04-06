@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Juego de Clicks</title>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React y ReactDOM desde CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Babel para JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tu código React -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const JuegoContador = () => {
+      const [fase, setFase] = useState("inicio");
+      const [mensaje, setMensaje] = useState("");
+      const [contador, setContador] = useState(0);
+      const [tiempoRestante, setTiempoRestante] = useState(5);
+      const [mejorRacha, setMejorRacha] = useState(
+        () => parseInt(localStorage.getItem("mejorRacha")) || 0
+      );
+
+      const empezarJuego = () => {
+        setFase("preparacion");
+        let pasos = ["Preparados", "Listos", "¡Ya!"];
+        pasos.forEach((texto, index) => {
+          setTimeout(() => {
+            setMensaje(texto);
+            if (index === pasos.length - 1) {
+              iniciarContador();
+            }
+          }, (index + 1) * 1000);
+        });
+      };
+
+      const iniciarContador = () => {
+        setFase("jugando");
+        setMensaje("");
+        setContador(0);
+        setTiempoRestante(5);
+      };
+
+      useEffect(() => {
+        if (fase === "jugando" && tiempoRestante > 0) {
+          const timer = setTimeout(() => {
+            setTiempoRestante(tiempoRestante - 1);
+          }, 1000);
+          return () => clearTimeout(timer);
+        } else if (fase === "jugando" && tiempoRestante === 0) {
+          finalizarJuego();
+        }
+      }, [fase, tiempoRestante]);
+
+      const finalizarJuego = () => {
+        setFase("terminado");
+        if (contador > mejorRacha) {
+          setMejorRacha(contador);
+          localStorage.setItem("mejorRacha", contador);
+        }
+      };
+
+      const clickear = () => {
+        setContador(contador + 1);
+      };
+
+      return (
+        <div style={{ textAlign: "center", marginTop: "50px", fontFamily: "Arial, sans-serif" }}>
+          <h1>Juego de Clicks</h1>
+
+          {fase === "inicio" && <button onClick={empezarJuego} style={{ padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}>Empezar</button>}
+
+          {fase === "preparacion" && <h2>{mensaje}</h2>}
+
+          {fase === "jugando" && (
+            <div>
+              <h2>Clicks: {contador}</h2>
+              <h3>Tiempo restante: {tiempoRestante}s</h3>
+              <button onClick={clickear} style={{ padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}>Clickear</button>
+            </div>
+          )}
+
+          {fase === "terminado" && (
+            <div>
+              <h2>Clicks realizados: {contador}</h2>
+              <h3>Mejor racha: {mejorRacha}</h3>
+              <button onClick={empezarJuego} style={{ padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}>Empezar</button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<JuegoContador />);
+  </script>
+</body>
+</html>

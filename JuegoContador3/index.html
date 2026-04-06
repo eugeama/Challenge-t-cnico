@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JuegoContador - React</title>
+    <!-- Cargamos React y Babel para transpolar el código sobre la marcha -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #f0f2f5; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Pegar aquí el código del componente JuegoContador proporcionado arriba
+        const { useState, useEffect, useRef } = React;
+
+        const JuegoContador = () => {
+            const [estado, setEstado] = useState('inicio');
+            const [mensajeInicial, setMensajeInicial] = useState('');
+            const [clicks, setClicks] = useState(0);
+            const [tiempoRestante, setTiempoRestante] = useState(5);
+            const [record, setRecord] = useState(
+                () => Number(localStorage.getItem('recordJuegoContador')) || 0
+            );
+
+            const timerRef = useRef(null);
+
+            const iniciarCuentaRegresiva = () => {
+                setEstado('cuenta-regresiva');
+                setClicks(0);
+                setTiempoRestante(5);
+                
+                const fases = ['Preparados', 'Listos', '¡Ya!'];
+                fases.forEach((texto, index) => {
+                    setTimeout(() => {
+                        setMensajeInicial(texto);
+                        if (index === fases.length - 1) {
+                            setTimeout(() => comenzarJuego(), 1000);
+                        }
+                    }, index * 1000);
+                });
+            };
+
+            const comenzarJuego = () => {
+                setEstado('jugando');
+                timerRef.current = setInterval(() => {
+                    setTiempoRestante((prev) => prev - 1);
+                }, 1000);
+            };
+
+            useEffect(() => {
+                if (tiempoRestante === 0 && estado === 'jugando') {
+                    clearInterval(timerRef.current);
+                    setEstado('terminado');
+                    if (clicks > record) {
+                        setRecord(clicks);
+                        localStorage.setItem('recordJuegoContador', clicks);
+                    }
+                }
+            }, [tiempoRestante, estado]);
+
+            const manejarClick = () => {
+                if (estado === 'jugando') setClicks(c => c + 1);
+            };
+
+            // Estilos simplificados (iguales al anterior)
+            const styles = {
+                container: { fontFamily: 'sans-serif', textAlign: 'center', padding: '20px' },
+                btnStart: { padding: '15px 30px', fontSize: '1.2rem', cursor: 'pointer', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px' },
+                btnClick: { padding: '40px', fontSize: '1.5rem', cursor: 'pointer', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '50%', userSelect: 'none' },
+                timer: { fontSize: '2rem', color: 'red' }
+            };
+
+            return (
+                <div style={styles.container}>
+                    <h1>JuegoContador</h1>
+                    <p>Máximo Récord: {record}</p>
+
+                    {(estado === 'inicio' || estado === 'terminado') && (
+                        <div>
+                            {estado === 'terminado' && (
+                                <div>
+                                    <h2>¡Fin del juego!</h2>
+                                    <p>Hiciste {clicks} clicks.</p>
+                                </div>
+                            )}
+                            <button style={styles.btnStart} onClick={iniciarCuentaRegresiva}>
+                                Empezar
+                            </button>
+                        </div>
+                    )}
+
+                    {estado === 'cuenta-regresiva' && <h2>{mensajeInicial}</h2>}
+
+                    {estado === 'jugando' && (
+                        <div>
+                            <h2 style={styles.timer}>Tiempo: {tiempoRestante}</h2>
+                            <p>Clicks actual: {clicks}</p>
+                            <button style={styles.btnClick} onClick={manejarClick}>CLICK</button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<JuegoContador />);
+    </script>
+</body>
+</html>
